@@ -1,13 +1,18 @@
-import uvloop
-
-uvloop.install()
-
+import asyncio
 import logging
 import os
 import re
 
+# ==== PERBAIKAN BAGIAN EVENT LOOP ====
+try:
+    import uvloop
+    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+except ModuleNotFoundError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+# =====================================
+
 from pyrogram import Client, filters
-from pyrogram.enums import ParseMode 
+from pyrogram.enums import ParseMode
 from pyrogram.handlers import CallbackQueryHandler, MessageHandler
 from pyrogram.types import Message
 from pytgcalls import PyTgCalls
@@ -16,6 +21,7 @@ from pyromod import listen
 from PyroUbot.config import *
 from aiohttp import ClientSession
 
+# ==== LOGGING ====
 class ConnectionHandler(logging.Handler):
     def emit(self, record):
         for X in ["OSError", "TimeoutError"]:
@@ -34,30 +40,32 @@ connection_handler = ConnectionHandler()
 logger.addHandler(stream_handler)
 logger.addHandler(connection_handler)
 logging.getLogger("pytgcalls").setLevel(logging.WARNING)
+# =================
 
 aiosession = ClientSession()
 
+# ==== KELAS BOT ====
 class Bot(Client):
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
+        super().__init__(**kwargs, device_model="ᴋɪɴɢᴢɴᴏᴇᴢᴜʙᴏᴛ")
+        
     def on_message(self, filters=None, group=-1):
         def decorator(func):
             self.add_handler(MessageHandler(func, filters), group)
             return func
-
         return decorator
 
     def on_callback_query(self, filters=None, group=-1):
         def decorator(func):
             self.add_handler(CallbackQueryHandler(func, filters), group)
             return func
-
         return decorator
 
     async def start(self):
         await super().start()
+# ===================
 
+# ==== KELAS UBOT ====
 class Ubot(Client):
     __module__ = "pyrogram.client"
     _ubot = []
@@ -67,7 +75,7 @@ class Ubot(Client):
     _get_my_peer = {}
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super().__init__(**kwargs, device_model="ᴋɪɴɢᴢɴᴏᴇᴢᴜʙᴏᴛ")
         self.call_py = PyTgCalls(self)
 
     def on_message(self, filters=None, group=-1):
@@ -75,7 +83,6 @@ class Ubot(Client):
             for ub in self._ubot:
                 ub.add_handler(MessageHandler(func, filters), group)
             return func
-
         return decorator
 
     def set_prefix(self, user_id, prefix):
@@ -121,9 +128,7 @@ class Ubot(Client):
                             re.sub(r"\\([\"'])", r"\1", m.group(2) or m.group(3) or "")
                             for m in command_re.finditer(without_command)
                         ]
-
                         return True
-
                 return False
 
         return filters.create(func)
@@ -140,8 +145,9 @@ class Ubot(Client):
         self._get_my_id.append(self.me.id)
         self._translate[self.me.id] = "id"
         print(f"[INFO] - ({self.me.id}) - STARTED")
+# =====================
 
-
+# ==== INSTANSI BOT ====
 bot = Bot(
     name="bot",
     bot_token=BOT_TOKEN,
@@ -155,3 +161,4 @@ ubot = Ubot(name="ubot")
 from PyroUbot.core.database import *
 from PyroUbot.core.function import *
 from PyroUbot.core.helpers import *
+# =======================
